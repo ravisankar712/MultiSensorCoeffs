@@ -35,7 +35,6 @@ class Indicator:
     def __init__(self, *bases):
         self.bases = [b for b in bases]
         self.W = np.random.random(len(bases))
-        #self.W /= sum(self.W)
 
     def output(self):
         S = 0.0
@@ -46,13 +45,12 @@ class Indicator:
 
     def calculateCost(self, desired):
         guess = self.output()
-        guess -= guess[0]
         SSE = (guess - desired) * (guess  - desired)
         #find a better cost function!!
         self.cost = sum(SSE)/len(SSE)
 
-    def calculateFitness(self):
-        self.fitness = 1.0 - self.cost
+    # def calculateFitness(self):
+    #     self.fitness = 1.0 - self.cost
 
     def mutate(self, rate=0.1):
         if np.random.random() < rate:
@@ -61,7 +59,7 @@ class Indicator:
         self.W = np.clip(self.W, 0.0, 1.0)
 
     def set_W(self, W):
-        self.W = W
+        self.W = W[:]
 
     def clone(self):
         newI = Indicator(*self.bases)
@@ -97,8 +95,8 @@ class PopulationManager:
 
         #it is easier to work in terms of fitness!!
         ##not using it now!! Do we need this??
-        for I in self.population:
-            I.calculateFitness()
+        # for I in self.population:
+        #     I.calculateFitness()
 
         newpop = []
         for _ in range(self.popsize):
@@ -109,15 +107,15 @@ class PopulationManager:
 
         return newpop
 
-    def makeChild(self, population): #Do we need this???
-        index = 0
-        r = np.random.random()
-        while r > 0.0:
-            r -= population[index].fitness
-            index += 1
-        index -= 1
+    # def makeChild(self, population): #Do we need this???
+    #     index = 0
+    #     r = np.random.random()
+    #     while r > 0.0:
+    #         r -= population[index].fitness
+    #         index += 1
+    #     index -= 1
 
-        return population[index].clone()
+    #     return population[index].clone()
 
     def evolve(self, desired, generations=1):
         for _ in range(generations):
@@ -138,27 +136,27 @@ class PopulationManager:
 
         return best
 
-
-
 #main
-plt.ion()
+if __name__ == "__main__":
+    plt.ion()
+    pop = PopulationManager(*bases, 20)
+    # pop.evolve(Desired, 5000)
+    plt.plot(xs, Desired, label="desired")
+    out = pop.get_BestIndicator(Desired).output()
+    outplot, = plt.plot(xs, out)
+    for i in range(100):
+        pop.population = pop.NextGeneration(Desired)
+        best = pop.get_BestIndicator(Desired)
+        out = best.output()
+        outplot.set_ydata(out)
+        plt.title("Generation = {}".format(i))
+        plt.pause(0.0001)
 
-plt.plot(xs, Desired, label="desired")
+    #the best weights!
+    print(
+        best.W
+    )
+    plt.legend()
+    plt.show()
 
-pop = PopulationManager(*bases, 100)
-# pop.evolve(Desired, 500)
-out = pop.get_BestIndicator(Desired).output()
-outplot, = plt.plot(xs, out-out[0], label="prediction")
-for i in range(5000):
-    pop.population = pop.NextGeneration(Desired)
-    best = pop.get_BestIndicator(Desired)
-    out = best.output()
-    outplot.set_ydata(out-out[0])
-    plt.pause(0.0001)
 
-#the best weights!
-print(
-    best.W
-)
-plt.legend()
-plt.show()
